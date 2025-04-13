@@ -3,8 +3,9 @@ package org.firstinspires.ftc.teamcode;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.Gamepad;
 
-// IF you see this, it updated
+// IF you see this, it updated on Sun April 13 about 13:18, Central
 
 /*
 This code uses the LinearOpMode rather than OpMode.
@@ -35,11 +36,99 @@ for a description of the differences between LinearOpMode and Opmode.
 @TeleOp(name="Teleop Dev01", group="19380")
 public class Robot_2025 extends LinearOpMode {
 
+    private static class DrivePowers {
+
+        // Declare constants
+        static double ROTATION_SCALE = 0.75;   // Scaling factor to determine "twisting" effect on power levels
+        static double MAX_POWER_INCREASE = 0.05;   // Maximum power increase (acceleration) per update
+        static double MAX_POWER_DECREASE = -0.05;   // Maximum power decrease (deceleration) per update
+
+        double currentPowerLF;  // Current power for the robot's left front drive motor
+        double currentPowerLR;  // Current power for the robot's left rear drive motor
+        double currentPowerRF;  // Current power for the robot's right front drive motor
+        double currentPowerRR;  // Current power for the robot's right rear drive motor
+
+        // Class constructor
+        private DrivePower() {
+
+            currentPowerLF = 0;  // Initialize current power for the robot's left front drive motor
+            currentPowerLR = 0;  // Initialize current power for the robot's left rear drive motor
+            currentPowerRF = 0;  // Initialize current power for the robot's right front drive motor
+            currentPowerRR = 0;  // Initialize current power for the robot's right rear drive motor
+
+        }
+        // Method to read the sticks on controller 1 and update the drive motors' power
+        private void updateDrivePower(Gamepad gamepad1) {
+
+            // The driver controls the robot using:
+            //  1.  Linear motion using the left stick on controller 1 with "drive" (forward/backward) and
+            //      "strafe" (left/right), and
+            //  2.  Rotational motion using the right stick on controller 1 with "twist" (rotation).
+            //
+            // Read the left and right sticks of Gamepad 1.
+            double drive = UtilsLib.deadStick(gamepad1.left_stick_y);
+            double strafe = UtilsLib.deadStick(gamepad1.left_stick_x);
+            double twist = UtilsLib.deadStick(gamepad1.right_stick_x);
+
+            // Calculate the difference between the current power levels and the target power levels calculated
+            // from sticks on gamepad1. These can be positive (acceleration) or negative (deceleration).
+            double deltaPowerLF = currentPowerLF - (drive + strafe + (ROTATION_SCALE * twist));
+            double deltaPowerRF = currentPowerRF - (drive - strafe - (ROTATION_SCALE * twist));
+            double deltaPowerLR = currentPowerLR - (drive - strafe + (ROTATION_SCALE * twist));
+            double deltaPowerRR = currentPowerRR - (drive + strafe - (ROTATION_SCALE * twist));
+
+            // If delta > 0 (acceleration), add the lesser of the delta and the maximum power increase.
+            // If delta <= 0 (deceleration), add the greater of the delta and the maximum power decrease
+            // (we "add the greater of" because both delta <=0 and MAX_POWER_DECREASE < 0).
+            if (deltaPowerLF > 0) {
+                currentPowerLF += Math.min(MAX_POWER_INCREASE, deltaPowerLF);
+            } else {
+                currentPowerLF += Math.max(MAX_POWER_DECREASE, deltaPowerLF);
+            }
+            if (deltaPowerRF > 0) {
+                currentPowerRF += Math.min(MAX_POWER_INCREASE, deltaPowerRF);
+            } else {
+                currentPowerRF += Math.max(MAX_POWER_DECREASE, deltaPowerRF);
+            }
+            if (deltaPowerLR > 0) {
+                currentPowerLR += Math.min(MAX_POWER_INCREASE, deltaPowerLR);
+            } else {
+                currentPowerLR += Math.max(MAX_POWER_DECREASE, deltaPowerLR);
+            }
+            if (deltaPowerRR > 0) {
+                currentPowerRR += Math.min(MAX_POWER_INCREASE, deltaPowerRR);
+            } else {
+                currentPowerRR += Math.max(MAX_POWER_DECREASE, deltaPowerRR);
+            }
+
+            // Determine the maximum target power level among the drive motors so we can normalize
+            // the power levels if one or more of them is greater than 1.
+            double max = Math.max(Math.abs(currentPowerLF), Math.abs(currentPowerRF));
+            max = Math.max(max, Math.abs(currentPowerLR));
+            max = Math.max(max, Math.abs(currentPowerRR));
+
+            // If the maximum power level for any motor is greater than 1, then normalize the power
+            // levels so the maximum power level is 1.
+            if (max > 1.0) {
+                currentPowerLF  /= max;
+                currentPowerRF /= max;
+                currentPowerLR   /= max;
+                currentPowerRR  /= max;
+            }
+
+
+
+
+        }
+
+    }
+
     // Declare and initialize DcMotors.
     private DcMotor front_left = null;  // Front left drive motor
     private DcMotor front_right = null;  // Front right drive motor
     private DcMotor back_left = null;  // Back left drive motor
     private DcMotor back_right = null;  // Back right drive motor
+
 
     // runOpMode() runs exactly once when the INIT button is pressed.
     // All code for the OpMode goes in here.
@@ -59,82 +148,23 @@ public class Robot_2025 extends LinearOpMode {
         front_right.setDirection(DcMotor.Direction.FORWARD);
         back_right.setDirection(DcMotor.Direction.FORWARD);
 
+        Gamepad currentGamepad1 = new Gamepad();
+        Gamepad currentGamepad2 = new Gamepad();
+
+        Gamepad previousGamepad1 = new Gamepad();
+        Gamepad previousGamepad2 = new Gamepad();
+
         // These are the current power setting for each of the 4 drive motors.
         double currentLeftFrontPower = 0;
         double currentRightFrontPower = 0;
         double currentLeftBackPower = 0;
         double currentRightBackPower = 0;
 
-        // This is the scaling factor to determines "twisting" effect one the power levels
-        double rotationScale = 0.75;
-
-        // These are the maximum power increase and decrease per loop to provide a more gradual
-        // acceleration and deceleration rather than simply setting the powers to 1.
-        double MAX_POWER_INCREASE = 0.05;
-        double MAX_POWER_DECREASE = -0.05;
-
         /* Wait for the game driver to press play */
         waitForStart();
 
         /* Run until the driver presses stop */
         while (opModeIsActive()) {
-
-            // The driver controls the robot using:
-            //  1.  Linear motion with drive (forward/backward) and strafe (left/right)
-            //      using the left stick on controller 1, and
-            //  2.  Rotational motion (rotating the whole chassis) using the
-            //      right stick on controller 1.
-
-            // Read the left and right sticks of Gampad 1.
-            double drive = UtilsLib.deadStick(gamepad1.left_stick_y);
-            double strafe = UtilsLib.deadStick(gamepad1.left_stick_x);
-            double twist = UtilsLib.deadStick(gamepad1.right_stick_x);
-
-            // Calculate the difference between the current power levels and the target power levels calculated
-            // from sticks on gamepad1. These can be positive (acceleration) or negative (deceleration).
-            double deltaLeftFrontPower = currentLeftFrontPower - (drive + strafe + (rotationScale * twist));
-            double deltaRightFrontPower = currentRightFrontPower - (drive - strafe - (rotationScale * twist));
-            double deltaLeftBackPower = currentLeftBackPower - (drive - strafe + (rotationScale * twist));
-            double deltaRightBackPower = currentRightBackPower - (drive + strafe - (rotationScale * twist));
-
-            // If delta > 0 (acceleration), add the lesser of the delta and the maximum power increase.
-            // If delta <= 0 (deceleration), add the greater of the delta and the maximum power decrease
-            // (we "add the greater of" because both delta <=0 and MAX_POWER_DECREASE < 0).
-            if (deltaLeftFrontPower > 0) {
-                currentLeftFrontPower += Math.min(MAX_POWER_INCREASE, deltaLeftFrontPower);
-            } else {
-                currentLeftFrontPower += Math.max(MAX_POWER_DECREASE, deltaLeftFrontPower);
-            }
-            if (deltaRightFrontPower > 0) {
-                currentRightFrontPower += Math.min(MAX_POWER_INCREASE, deltaRightFrontPower);
-            } else {
-                currentRightFrontPower += Math.max(MAX_POWER_DECREASE, deltaRightFrontPower);
-            }
-            if (deltaLeftBackPower > 0) {
-                currentLeftBackPower += Math.min(MAX_POWER_INCREASE, deltaLeftBackPower);
-            } else {
-                currentLeftBackPower += Math.max(MAX_POWER_DECREASE, deltaLeftBackPower);
-            }
-            if (deltaRightBackPower > 0) {
-                currentRightBackPower += Math.min(MAX_POWER_INCREASE, deltaRightBackPower);
-            } else {
-                currentRightBackPower += Math.max(MAX_POWER_DECREASE, deltaRightBackPower);
-            }
-
-            // Determine the maximum target power level among the drive motors so we can normalize
-            // the power levels if one or more of them is greater than 1.
-            double max = Math.max(Math.abs(currentLeftFrontPower), Math.abs(currentRightFrontPower));
-            max = Math.max(max, Math.abs(currentLeftBackPower));
-            max = Math.max(max, Math.abs(currentRightBackPower));
-
-            // If the maximum power level for any motor is greater than 1, then normalize the power
-            // levels so the maximum power level is 1.
-            if (max > 1.0) {
-                currentLeftFrontPower  /= max;
-                currentRightFrontPower /= max;
-                currentLeftBackPower   /= max;
-                currentRightBackPower  /= max;
-            }
 
             // Set the motors to the calculated values.
             front_left.setPower(currentLeftFrontPower);
