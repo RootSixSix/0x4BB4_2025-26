@@ -36,6 +36,11 @@ for a description of the differences between LinearOpMode and Opmode.
 @TeleOp(name="Teleop Dev01", group="19380")
 public class Robot_2025 extends LinearOpMode {
 
+    private DcMotor front_left  = null;
+    private DcMotor front_right = null;
+    private DcMotor back_left   = null;
+    private DcMotor back_right  = null;
+
     // These are the current power setting for each of the 4 drive motors.
     double leftFront = 0;  // Current power for the robot's left front drive motor
     double leftRear = 0;  // Current power for the robot's left rear drive motor
@@ -46,6 +51,7 @@ public class Robot_2025 extends LinearOpMode {
     public void updateDrivePowers(Gamepad gamepad1) {
 
         // Declare constants
+        double DRIVE_SCALE = 1.00;          // Scaling factor to scale normalized drive powers
         double ROTATION_SCALE = 0.75;       // Scaling factor to determine "twisting" effect on power levels
         double MAX_POWER_INCREASE = 0.05;   // Maximum power increase (acceleration) per update
         double MAX_POWER_DECREASE = -0.05;  // Maximum power decrease (deceleration) per update
@@ -61,35 +67,40 @@ public class Robot_2025 extends LinearOpMode {
         double strafe = UtilsLib.deadStick(gamepad1.left_stick_x);
         double twist = UtilsLib.deadStick(gamepad1.right_stick_x);
 
-        // Calculate the difference between the current power levels and the target power levels calculated
-        // from sticks on gamepad1. These can be positive (acceleration) or negative (deceleration).
-        double deltaPowerLF = leftFront - (drive + strafe + (ROTATION_SCALE * twist));
-        double deltaPowerRF = rightFront - (drive - strafe - (ROTATION_SCALE * twist));
-        double deltaPowerLR = leftRear - (drive - strafe + (ROTATION_SCALE * twist));
-        double deltaPowerRR = rightRear - (drive + strafe - (ROTATION_SCALE * twist));
+        // Calculate the differences between:
+        //  1.  the target power levels calculated in the parentheticals using the values read from
+        //      the sticks on gamepad1, and
+        //  2.  the current power levels.
+        // These can be positive (acceleration) or negative (deceleration).  For a description of
+        // the mecanum drive calculations, see:
+        // https://gm0.org/en/latest/docs/software/tutorials/mecanum-drive.html
+        double deltaLeftFront = (drive + strafe + (ROTATION_SCALE * twist)) - leftFront;
+        double deltaRightFront = (drive - strafe - (ROTATION_SCALE * twist)) - rightFront;
+        double deltaLeftRear = (drive - strafe + (ROTATION_SCALE * twist)) - leftRear;
+        double deltaRightRear = (drive + strafe - (ROTATION_SCALE * twist)) - rightRear;
 
         // If delta > 0 (acceleration), add the lesser of the delta and the maximum power increase.
         // If delta <= 0 (deceleration), add the greater of the delta and the maximum power decrease
         // (we "add the greater of" because both delta <=0 and MAX_POWER_DECREASE < 0).
-        if (deltaPowerLF > 0) {
-            leftFront += Math.min(MAX_POWER_INCREASE, deltaPowerLF);
+        if (deltaLeftFront > 0) {
+            leftFront += Math.min(MAX_POWER_INCREASE, deltaLeftFront);
         } else {
-            leftFront += Math.max(MAX_POWER_DECREASE, deltaPowerLF);
+            leftFront += Math.max(MAX_POWER_DECREASE, deltaLeftFront);
         }
-        if (deltaPowerRF > 0) {
-            rightFront += Math.min(MAX_POWER_INCREASE, deltaPowerRF);
+        if (deltaRightFront > 0) {
+            rightFront += Math.min(MAX_POWER_INCREASE, deltaRightFront);
         } else {
-            rightFront += Math.max(MAX_POWER_DECREASE, deltaPowerRF);
+            rightFront += Math.max(MAX_POWER_DECREASE, deltaRightFront);
         }
-        if (deltaPowerLR > 0) {
-            leftRear += Math.min(MAX_POWER_INCREASE, deltaPowerLR);
+        if (deltaLeftRear > 0) {
+            leftRear += Math.min(MAX_POWER_INCREASE, deltaLeftRear);
         } else {
-            leftRear += Math.max(MAX_POWER_DECREASE, deltaPowerLR);
+            leftRear += Math.max(MAX_POWER_DECREASE, deltaLeftRear);
         }
-        if (deltaPowerRR > 0) {
-            rightRear += Math.min(MAX_POWER_INCREASE, deltaPowerRR);
+        if (deltaRightRear > 0) {
+            rightRear += Math.min(MAX_POWER_INCREASE, deltaRightRear);
         } else {
-            rightRear += Math.max(MAX_POWER_DECREASE, deltaPowerRR);
+            rightRear += Math.max(MAX_POWER_DECREASE, deltaRightRear);
         }
 
         // Determine the maximum target power level among the drive motors so we can normalize
@@ -107,6 +118,11 @@ public class Robot_2025 extends LinearOpMode {
             rightRear  /= max;
         }
 
+        front_left.setPower(DRIVE_SCALE * leftFront);
+        front_right.setPower(DRIVE_SCALE * rightFront);
+        back_left.setPower(DRIVE_SCALE * leftRear);
+        back_right.setPower(DRIVE_SCALE * rightRear);
+
     }
 
     // runOpMode() runs exactly once when the INIT button is pressed.
@@ -116,10 +132,10 @@ public class Robot_2025 extends LinearOpMode {
 
         // Name strings must match the config names on the Robot Controller app.
         // Declare and initialize DcMotors.
-        DcMotor front_left = hardwareMap.get(DcMotor.class, "fldrive");
-        DcMotor front_right = hardwareMap.get(DcMotor.class, "frdrive");
-        DcMotor back_left = hardwareMap.get(DcMotor.class, "bldrive");// Back right drive motor
-        DcMotor back_right = hardwareMap.get(DcMotor.class, "brdrive");
+        front_left = hardwareMap.get(DcMotor.class, "fldrive");
+        front_right = hardwareMap.get(DcMotor.class, "frdrive");
+        back_left = hardwareMap.get(DcMotor.class, "bldrive");// Back right drive motor
+        back_right = hardwareMap.get(DcMotor.class, "brdrive");
 
         // Left and right motor must turn in opposite directions because they
         // have mirror symmetry.
