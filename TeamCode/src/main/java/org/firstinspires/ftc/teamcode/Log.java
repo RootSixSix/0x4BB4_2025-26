@@ -68,9 +68,19 @@ public class Log {
         }
     }
 
+    public void addLine(String data) {
+        if (disabled) return;
+        try {
+            fileWriter.write(data);
+            line = "";
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
     public void addData(String data) {
         if (disabled) return;
-        if (!line.equals("")) line += ",";
+        if (!line.isEmpty()) line += ",";
         line += data;
     }
     public void addData(Object data) {

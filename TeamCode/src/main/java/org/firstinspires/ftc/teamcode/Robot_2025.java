@@ -7,10 +7,7 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.Gamepad;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-// IF you see this, it updated on Sun April 13 about 13:18, Central
+// If you see this, it updated on Sun April 20 about 11:30, Central
 
 /*
 This code uses the LinearOpMode rather than OpMode.
@@ -41,7 +38,6 @@ for a description of the differences between LinearOpMode and Opmode.
 @TeleOp(name="Teleop Dev01", group="19380")
 public class Robot_2025 extends LinearOpMode {
 
-    private static final Logger log = LoggerFactory.getLogger(Robot_2025.class);
     private DcMotor leftFrontMotor = null;
     private DcMotor rightFrontMotor = null;
     private DcMotor leftRearMotor = null;
@@ -174,6 +170,11 @@ public class Robot_2025 extends LinearOpMode {
         leftRearMotor.setDirection(DcMotor.Direction.REVERSE);
         rightRearMotor.setDirection(DcMotor.Direction.FORWARD);
 
+        logFile.addLine("Secs,drive,strafe,drive + strafe + (ROTATION_SCALE * twist)," +
+                "drive - strafe - (ROTATION_SCALE * twist),drive - strafe + (ROTATION_SCALE * twist)," +
+                "drive + strafe - (ROTATION_SCALE * twist),deltaLeftFront,deltaRightFront,deltaLeftRear," +
+                        "deltaRightRear,leftFrontPower),rightFrontPower,leftRearPower,rightRearPower\n");
+
         /// Wait for the game driver to press play
         waitForStart();
 
@@ -215,6 +216,7 @@ public class Robot_2025 extends LinearOpMode {
 
         }
 
+        logFile.close();
 
     }
 }
