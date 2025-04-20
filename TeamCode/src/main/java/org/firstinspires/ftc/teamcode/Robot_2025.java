@@ -118,6 +118,7 @@ public class Robot_2025 extends LinearOpMode {
             rightRear  /= max;
         }
 
+        // Set the drive motor powers
         front_left.setPower(DRIVE_SCALE * leftFront);
         front_right.setPower(DRIVE_SCALE * rightFront);
         back_left.setPower(DRIVE_SCALE * leftRear);
@@ -130,35 +131,46 @@ public class Robot_2025 extends LinearOpMode {
     @Override
     public void runOpMode() {
 
-        // Name strings must match the config names on the Robot Controller app.
-        // Declare and initialize DcMotors.
+        /// Initialize everything that should be initialized before the player presses START
+        /// on the Driver's Hub.
+
+        // Name strings (e.g., "fldrive" must match the configuration names on the Robot Controller
+        // app on the Driver Hub.
         front_left = hardwareMap.get(DcMotor.class, "fldrive");
         front_right = hardwareMap.get(DcMotor.class, "frdrive");
         back_left = hardwareMap.get(DcMotor.class, "bldrive");// Back right drive motor
         back_right = hardwareMap.get(DcMotor.class, "brdrive");
 
-        // Left and right motor must turn in opposite directions because they
-        // have mirror symmetry.
+        // Left and right motors must turn in opposite directions because the wheels have mirror
+        // symmetry.
         front_left.setDirection(DcMotor.Direction.REVERSE);
         back_left.setDirection(DcMotor.Direction.REVERSE);
         front_right.setDirection(DcMotor.Direction.FORWARD);
         back_right.setDirection(DcMotor.Direction.FORWARD);
 
-        // Declare and initialize current and previous gamepad objects.  We use current
-        // and previou objects so that we can detect changes in the state of the gamepads
-        // during the "while (opModeIsActive()) {}" loop. For example, if the current state
-        // of gamepad1 is that the A button is pressed and the previous state is that the
-        // A button is not pressed, then we know that the driver pressed the A button during
-        // last loop.  See https://gm0.org/en/latest/docs/software/tutorials/gamepad.html
+        /// Wait for the game driver to press play
+        waitForStart();
+
+        /// Initialize variables that should be initialized after the player hits START on the
+        /// Driver Hub but before we enter the MAIN GAME LOOP.
+
+        // Initialize the time we start the MAIN GAME LOOP.
+
+
+        // We use current and previous Gamepad objects so that we can detect changes in the
+        // state of the gamepads during the "while (opModeIsActive()) {}" loop. For example, if
+        // the current state of gamepad1 is that button A is pressed and the previous state is
+        // that button A is not pressed, then we know that the driver pressed button A after
+        // the beginning of the last loop but before the beginning of the current loop.
+        // See https://gm0.org/en/latest/docs/software/tutorials/gamepad.html
         Gamepad currentGamepad1 = new Gamepad();
         Gamepad currentGamepad2 = new Gamepad();
         Gamepad previousGamepad1 = new Gamepad();
         Gamepad previousGamepad2 = new Gamepad();
 
-        /* Wait for the game driver to press play */
-        waitForStart();
-
-        /* Run until the driver presses stop */
+        ///
+        ///  MAIN GAME LOOP: Runs until the driver presses stop
+        ///
         while (opModeIsActive()) {
 
             // Store the currentGamepad1/2 values (which were used last loop iteration) in
@@ -166,9 +178,9 @@ public class Robot_2025 extends LinearOpMode {
             previousGamepad1.copy(currentGamepad1);
             previousGamepad2.copy(currentGamepad2);
 
-            // Store the gamepad values from this loop iteration in currentGamepad1/2 to be
-            // used for this loop iteration. This prevents the gamepad values from changing
-            // between being used and stored in previousGamepad1/2.
+            // Store the gamepad values to use for this loop iteration in currentGamepad1/2.
+            // This prevents the gamepad values from changing between being used and stored
+            // in previousGamepad1/2.
             currentGamepad1.copy(gamepad1);
             currentGamepad2.copy(gamepad2);
 
