@@ -219,4 +219,8 @@ public class Robot_2025 extends LinearOpMode {
         logFile.close();
 
     }
+
+    private void setDrivePowers (Gamepad gamepad) {
+
+    }
 }
