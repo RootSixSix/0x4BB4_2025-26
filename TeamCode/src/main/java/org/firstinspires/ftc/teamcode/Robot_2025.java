@@ -156,8 +156,8 @@ public class Robot_2025 extends LinearOpMode {
         /// Initialize everything that should be initialized before the player presses START
         /// on the Driver's Hub.
 
-        // Name strings (e.g., "driveLeftFront") must match the configuration names on the Robot Controller
-        // app on the Driver Hub.
+        // Name strings (e.g., "driveLeftFront") must match the configuration names on the Robot
+        // Controller app on the Driver Hub.
         leftFrontMotor = hardwareMap.get(DcMotor.class, "driveLeftFront");
         rightFrontMotor = hardwareMap.get(DcMotor.class, "driveRightFront");
         leftRearMotor = hardwareMap.get(DcMotor.class, "driveLeftRear");
